@@ -817,7 +817,10 @@ const TEACHER_PASSWORD = "MathTeacher2024!";
 // Cache versioning. Bump CACHE_VERSION to force every device to drop its
 // cached roster on next load (e.g. after a roster change or a new school year).
 const CACHE_VERSION = '2026-2027.1';
-const CACHE_MAX_AGE_HOURS = 12;
+// Long on purpose: the roster changes a few times a year, and each refetch
+// costs one read per student. CACHE_VERSION is the real invalidation lever --
+// bump it on any roster change. This is only a backstop if that is forgotten.
+const CACHE_MAX_AGE_HOURS = 24 * 7;
 let db = null;
 let currentUser = null;
 let currentProblem = null;
