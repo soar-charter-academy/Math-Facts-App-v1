@@ -813,6 +813,11 @@
     
 // Application State
 const TEACHER_PASSWORD = "MathTeacher2024!";
+
+// Cache versioning. Bump CACHE_VERSION to force every device to drop its
+// cached roster on next load (e.g. after a roster change or a new school year).
+const CACHE_VERSION = '2026-2027.1';
+const CACHE_MAX_AGE_HOURS = 12;
 let db = null;
 let currentUser = null;
 let currentProblem = null;
@@ -954,6 +959,10 @@ const firebaseStudents = [];
                     populateFilterOptions();
                 } else {
                     console.log('No students found in Firebase collection');
+                    students = [];
+                    clearCachedData();
+                    updateStudentList();
+                    populateFilterOptions();
                 }
             } catch (error) {
                 console.error('Error loading students from Firebase:', error);
@@ -2829,11 +2838,21 @@ function loadStudentAttemptsFromCache(studentId) {
 }
 
 // Students list cache functions
+function clearCachedData() {
+    try {
+        localStorage.removeItem('studentsList');
+        localStorage.removeItem('teacherDashboardData');
+    } catch (error) {
+        console.error('Error clearing cached data:', error);
+    }
+}
+
 function saveStudentsListToCache(studentsList) {
     try {
         const dataToSave = {
             students: studentsList,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            version: CACHE_VERSION
         };
         localStorage.setItem('studentsList', JSON.stringify(dataToSave));
         console.log(`💾 Saved ${studentsList.length} students to cache`);
@@ -2850,6 +2869,19 @@ function loadStudentsListFromCache() {
             const ageInMs = Date.now() - parsed.timestamp;
             const ageInHours = ageInMs / (1000 * 60 * 60);
             console.log(`📦 Found students list in cache (${ageInHours.toFixed(1)} hours old)`);
+
+            if (parsed.version !== CACHE_VERSION) {
+                console.log(`♻️ Cache version ${parsed.version || 'none'} != ${CACHE_VERSION}, discarding.`);
+                clearCachedData();
+                return null;
+            }
+
+            if (ageInHours > CACHE_MAX_AGE_HOURS) {
+                console.log(`⌛ Cache is ${ageInHours.toFixed(1)}h old (max ${CACHE_MAX_AGE_HOURS}h), discarding.`);
+                clearCachedData();
+                return null;
+            }
+
             return parsed.students;
         }
     } catch (error) {
@@ -2861,6 +2893,11 @@ function loadStudentsListFromCache() {
 async function loadMasteryDataForAllStudents() {
     if (!db) return {};
     
+    if (students.length === 0) {
+        console.log('No students loaded, skipping mastery query.');
+        return {};
+    }
+
     console.log('Loading ALL problem attempts in a single query...');
     
     try {
