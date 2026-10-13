@@ -2576,7 +2576,7 @@ function isInMasteryBucket(masteryRate, bucket) {
                 if (db) {
                     await loadStudentProgressFromCache(student.id);
                 } else {
-                    generateSampleAnalytics(student);
+                    showProgressUnavailable();
                 }
             }
 
@@ -2681,83 +2681,20 @@ function isInMasteryBucket(masteryRate, bucket) {
     }
 }
 
-        function generateSampleAnalytics(student) {
-            document.getElementById('studentMastery').textContent = '67.3%';
-            document.getElementById('factsPracticed').textContent = '84';
-            document.getElementById('totalMistakes').textContent = '23';
-            
-            const samplePatterns = [
-                { problem: '-3-7', errorRate: '78.6', errors: 11, attempts: 14 },
-                { problem: '4--5', errorRate: '71.4', errors: 5, attempts: 7 },
-                { problem: '-8+2', errorRate: '60.0', errors: 6, attempts: 10 },
-                { problem: '1-9', errorRate: '55.6', errors: 5, attempts: 9 },
-                { problem: '-2-6', errorRate: '50.0', errors: 4, attempts: 8 },
-                { problem: '3--4', errorRate: '45.5', errors: 5, attempts: 11 }
-            ];
-            
-            const errorPatternsDiv = document.getElementById('errorPatterns');
-            errorPatternsDiv.innerHTML = samplePatterns.map(pattern => `
-                <div class="pattern-card">
-                    <div class="pattern-problem">${pattern.problem.replace(/(\+|\-)/g, ' $1 ')} = ?</div>
-                    <div class="pattern-stats">
-                        ${pattern.errors} errors out of ${pattern.attempts} attempts<br>
-                        <strong>${pattern.errorRate}% error rate</strong>
-                    </div>
-                </div>
-            `).join('');
-            
-            generateSampleRecentProblems();
-        }
+        // No database connection means no figures. Showing invented numbers
+        // here once put fabricated mastery percentages under a real child's
+        // name, which a teacher could act on. Say nothing rather than guess.
+        function showProgressUnavailable() {
+            const message = '<div style="text-align: center; padding: 20px; color: #b00020;">'
+                + 'Not connected to the database, so this student&rsquo;s progress '
+                + 'cannot be loaded. Check your internet connection and reload the page.'
+                + '</div>';
 
-        function generateSampleRecentProblems() {
-            const sampleProblems = [];
-            const operations = ['+', '-'];
-            
-            for (let i = 0; i < 25; i++) {
-                const num1 = Math.floor(Math.random() * 21) - 10;
-                const num2 = Math.floor(Math.random() * 21) - 10;
-                const operation = operations[Math.floor(Math.random() * operations.length)];
-                const correctAnswer = operation === '+' ? num1 + num2 : num1 - num2;
-                const isCorrect = Math.random() > 0.25;
-                const studentAnswer = isCorrect ? correctAnswer : correctAnswer + Math.floor(Math.random() * 5) - 2;
-                
-                const timeAgo = Math.floor(Math.random() * 1440);
-                const timestamp = new Date(Date.now() - timeAgo * 60000);
-                
-                sampleProblems.push({
-                    problem: `${num1} ${operation} ${num2}`,
-                    correctAnswer,
-                    studentAnswer,
-                    isCorrect,
-                    timestamp: timestamp.toLocaleString()
-                });
-            }
-            
-            const recentProblemsDiv = document.getElementById('recentProblems');
-            recentProblemsDiv.innerHTML = `
-                <table class="problem-table">
-                    <thead>
-                        <tr>
-                            <th>Problem</th>
-                            <th>Student Answer</th>
-                            <th>Correct Answer</th>
-                            <th>Result</th>
-                            <th>Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${sampleProblems.map(p => `
-                            <tr>
-                                <td><strong>${p.problem} = ?</strong></td>
-                                <td class="${p.isCorrect ? 'correct-answer' : 'incorrect-answer'}">${p.studentAnswer}</td>
-                                <td>${p.correctAnswer}</td>
-                                <td>${p.isCorrect ? 'Correct' : 'Wrong'}</td>
-                                <td class="timestamp">${p.timestamp}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+            document.getElementById('studentMastery').textContent = '--';
+            document.getElementById('factsPracticed').textContent = '--';
+            document.getElementById('totalMistakes').textContent = '--';
+            document.getElementById('errorPatterns').innerHTML = message;
+            document.getElementById('recentProblems').innerHTML = message;
         }
 
         // General Functions
