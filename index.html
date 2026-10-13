@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3025,6 +3023,28 @@ function setupTeacherDashboardListener() {
 }
 
 
+// ONE-TIME CACHE BUST: clears every student's cached attempts once per device.
+// After it runs, the flag below is saved and it never runs again on that device.
+function runOneTimeAttemptsCacheBust() {
+    const BUST_FLAG = 'attemptsCacheBust_2026_10';
+    try {
+        if (localStorage.getItem(BUST_FLAG)) return; // already done on this device
+
+        // Collect keys first; removing while looping shifts the indexes
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('studentAttempts_')) keysToRemove.push(key);
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+
+        localStorage.setItem(BUST_FLAG, 'done');
+        console.log(`🧹 One-time cache bust: cleared ${keysToRemove.length} student attempt cache(s)`);
+    } catch (error) {
+        console.error('Error running one-time cache bust:', error);
+    }
+}
+
       
         // Event Listeners
         document.addEventListener('keypress', function(e) {
@@ -3046,6 +3066,7 @@ window.addEventListener('load', function() {
     console.log('Page loaded, initializing application...');
     console.log('🔍 Firebase Read Tracking: Enabled');
     console.log('   Type showReadStats() in console to see statistics');
+    runOneTimeAttemptsCacheBust();
     initFirebase();
 });
 
